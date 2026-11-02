@@ -118,7 +118,7 @@
             50% { opacity: 1; }
         }
 
-        /* Image Display Frame */
+        /* Base Image Display Frame */
         .image-card {
             display: none;
             position: absolute;
@@ -127,7 +127,6 @@
             border-radius: 20px;
             box-shadow: 0 20px 40px rgba(0,0,0,0.3);
             overflow: hidden;
-            cursor: pointer;
             background: rgba(255, 255, 255, 0.9);
             padding: 10px;
             border: 3px solid rgba(255, 255, 255, 0.8);
@@ -172,25 +171,78 @@
             font-weight: 600;
         }
 
-        /* Balloon Pop / Burst Animation */
-        .pop-animation {
-            animation: balloonPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.4) forwards;
+        /* --- UNIQUE ANIMATIONS FOR EACH STEP --- */
+
+        /* 1. Image 1: Zoom In & Rotate Animation */
+        @keyframes anim1In {
+            0% { transform: scale(0) rotate(-180deg); opacity: 0; }
+            100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+        @keyframes anim1Out {
+            0% { transform: scale(1) rotate(0deg); opacity: 1; }
+            100% { transform: scale(1.5) rotate(45deg); opacity: 0; }
         }
 
-        @keyframes balloonPop {
+        /* 2. Image 2: Slide from Right Animation */
+        @keyframes anim2In {
+            0% { transform: translateX(120vw) scale(0.8); opacity: 0; }
+            100% { transform: translateX(0) scale(1); opacity: 1; }
+        }
+        @keyframes anim2Out {
+            0% { transform: translateX(0) scale(1); opacity: 1; }
+            100% { transform: translateX(-120vw) scale(0.8); opacity: 0; }
+        }
+
+        /* 3. Image 3: Flip and Bounce Animation */
+        @keyframes anim3In {
+            0% { transform: perspective(600px) rotateY(90deg); opacity: 0; }
+            100% { transform: perspective(600px) rotateY(0deg); opacity: 1; }
+        }
+        @keyframes anim3Out {
+            0% { transform: perspective(600px) rotateY(0deg); opacity: 1; }
+            100% { transform: perspective(600px) rotateY(-90deg); opacity: 0; }
+        }
+
+        /* 4. Image 4: Drop from Top Animation */
+        @keyframes anim4In {
+            0% { transform: translateY(-100vh) scale(0.5); opacity: 0; }
+            60% { transform: translateY(20px) scale(1.05); opacity: 1; }
+            100% { transform: translateY(0) scale(1); opacity: 1; }
+        }
+        @keyframes anim4Out {
+            0% { transform: translateY(0) scale(1); opacity: 1; }
+            100% { transform: translateY(100vh) scale(0.5); opacity: 0; }
+        }
+
+        /* 5. Love Card: Heartbeat Zoom Bloom Animation */
+        @keyframes animLoveIn {
             0% { transform: scale(0.2); opacity: 0; }
             50% { transform: scale(1.15); opacity: 1; }
-            75% { transform: scale(0.95); }
+            70% { transform: scale(0.95); }
             100% { transform: scale(1); opacity: 1; }
         }
 
-        .pop-out {
-            animation: balloonBurstOut 0.3s forwards ease-in;
-        }
+        /* Classes to trigger animations */
+        .play-anim-1-in { animation: anim1In 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.4) forwards; }
+        .play-anim-1-out { animation: anim1Out 0.5s ease-in forwards; }
 
-        @keyframes balloonBurstOut {
+        .play-anim-2-in { animation: anim2In 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.4) forwards; }
+        .play-anim-2-out { animation: anim2Out 0.5s ease-in forwards; }
+
+        .play-anim-3-in { animation: anim3In 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.4) forwards; }
+        .play-anim-3-out { animation: anim3Out 0.5s ease-in forwards; }
+
+        .play-anim-4-in { animation: anim4In 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.4) forwards; }
+        .play-anim-4-out { animation: anim4Out 0.5s ease-in forwards; }
+
+        .play-love-in { animation: animLoveIn 1s cubic-bezier(0.175, 0.885, 0.32, 1.4) forwards; }
+
+        .burst-gift {
+            animation: burstGiftBox 0.4s forwards ease-in;
+        }
+        @keyframes burstGiftBox {
             0% { transform: scale(1); opacity: 1; }
-            40% { transform: scale(1.2); }
+            50% { transform: scale(1.3); }
             100% { transform: scale(0); opacity: 0; }
         }
     </style>
@@ -252,7 +304,7 @@
 
     <!-- Background Music -->
     <audio id="bgMusic" loop>
-        <source src="song.mp3" type="audio/mpeg">
+        <source src="wo-nakhrewari-hai-video-song-genius-utkarsh-sharma-ishita-chauhan-hemant-br_Ws9rMh2G.mp3" type="audio/mp3">
     </audio>
 
     <script>
@@ -264,12 +316,12 @@
         const loveCard = document.getElementById('loveCard');
         const bgMusic = document.getElementById('bgMusic');
 
-        let currentStep = 0;
+        let isStarted = false;
 
-        // Low volume background music setup (20%)
-        function playLowVolumeMusic() {
-            bgMusic.volume = 0.2;
-            bgMusic.play().catch(err => console.log("Audio autoplay restriction handled:", err));
+        // Play 30% Volume Background Music
+        function playMusic() {
+            bgMusic.volume = 0.3; // Volume set to 30%
+            bgMusic.play().catch(err => console.log("Audio play error:", err));
         }
 
         // Robust Double-Tap Detection Logic for Mobile & PC
@@ -297,59 +349,62 @@
             });
         }
 
-        function transition(currentEl, nextEl) {
-            currentEl.classList.remove('pop-animation');
-            currentEl.classList.add('pop-out');
-            
-            setTimeout(() => {
-                currentEl.style.display = 'none';
-                currentEl.classList.remove('pop-out');
-                
-                if (nextEl) {
-                    nextEl.style.display = 'block';
-                    nextEl.classList.add('pop-animation');
-                }
-            }, 250);
-        }
-
-        // 1. Gift Box double tap -> Play Music & Pop 1st Image
+        // Automatic Sequence Triggered on Gift Box Double Tap (Har image 15 seconds ke liye chalegi)
         addDoubleTap(giftBox, () => {
-            if (currentStep === 0) {
-                playLowVolumeMusic();
-                transition(giftBox, img1);
-                currentStep = 1;
-            }
-        });
+            if (!isStarted) {
+                isStarted = true;
+                playMusic();
 
-        // 2. 1st Image double tap -> Pop 2nd Image
-        addDoubleTap(img1, () => {
-            if (currentStep === 1) {
-                transition(img1, img2);
-                currentStep = 2;
-            }
-        });
+                // Gift Box Burst Out Animation
+                giftBox.classList.add('burst-gift');
+                setTimeout(() => {
+                    giftBox.style.display = 'none';
 
-        // 3. 2nd Image double tap -> Pop 3rd Image
-        addDoubleTap(img2, () => {
-            if (currentStep === 2) {
-                transition(img2, img3);
-                currentStep = 3;
-            }
-        });
+		    // === STEP 1: Show Image 1 (0 seconds) ===
+                    img1.style.display = 'block';
+                    img1.classList.add('play-anim-1-in');
 
-        // 4. 3rd Image double tap -> Pop 4th Image
-        addDoubleTap(img3, () => {
-            if (currentStep === 3) {
-                transition(img3, img4);
-                currentStep = 4;
-            }
-        });
+                    // === STEP 2: Show Image 2 (After 13 seconds) ===
+                    setTimeout(() => {
+                        img1.classList.remove('play-anim-1-in');
+                        img1.classList.add('play-anim-1-out');
+                        setTimeout(() => { img1.style.display = 'none'; }, 500);
 
-        // 5. 4th Image double tap -> Pop Final 'I love you meri Sonaa..' Page
-        addDoubleTap(img4, () => {
-            if (currentStep === 4) {
-                transition(img4, loveCard);
-                currentStep = 5;
+                        img2.style.display = 'block';
+                        img2.classList.add('play-anim-2-in');
+                    }, 13000);
+
+                    // === STEP 3: Show Image 3 (After 26 seconds) ===
+                    setTimeout(() => {
+                        img2.classList.remove('play-anim-2-in');
+                        img2.classList.add('play-anim-2-out');
+                        setTimeout(() => { img2.style.display = 'none'; }, 500);
+
+                        img3.style.display = 'block';
+                        img3.classList.add('play-anim-3-in');
+                    }, 26000);
+
+                    // === STEP 4: Show Image 4 (After 39 seconds) ===
+                    setTimeout(() => {
+                        img3.classList.remove('play-anim-3-in');
+                        img3.classList.add('play-anim-3-out');
+                        setTimeout(() => { img3.style.display = 'none'; }, 500);
+
+                        img4.style.display = 'block';
+                        img4.classList.add('play-anim-4-in');
+                    }, 39000);
+
+                    // === STEP 5: Show Final Love Card (After 52 seconds) ===
+                    setTimeout(() => {
+                        img4.classList.remove('play-anim-4-in');
+                        img4.classList.add('play-anim-4-out');
+                        setTimeout(() => { img4.style.display = 'none'; }, 500);
+
+                        loveCard.style.display = 'block';
+                        loveCard.classList.add('play-love-in');
+                    }, 52000);
+                    
+                }, 400);
             }
         });
     </script>
